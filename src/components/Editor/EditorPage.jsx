@@ -354,7 +354,7 @@ export default function EditorPage({ user }) {
               {execution.stderr || <span className="output-placeholder">No errors.</span>}
             </div>
             <div className="output-panel" style={{ display: execution.activeOutputTab === OUTPUT_TABS.AI ? 'block' : 'none', fontFamily: "'Inter', sans-serif" }}>
-              <AIResponsePanel isLoading={ai.isAILoading} response={ai.aiResponse} />
+              <AIResponsePanel isLoading={ai.isAILoading} response={ai.aiResponse} onApplyFix={(code) => { editor.setCode(code); toast.success('Solution applied!'); }} />
             </div>
           </div>
 

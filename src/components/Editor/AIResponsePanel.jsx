@@ -3,7 +3,7 @@
  * Renders the AI output panel — handles loading, empty state, and all
  * response types: error explanation, fix, logic breakdown, trace, tests, complexity.
  */
-export default function AIResponsePanel({ isLoading, response }) {
+export default function AIResponsePanel({ isLoading, response, onApplyFix }) {
   if (isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -44,8 +44,18 @@ export default function AIResponsePanel({ isLoading, response }) {
       )}
       {response.fixedCode && (
         <div className="ai-card">
-          <div className="ai-card-label" style={{ color: 'var(--green)' }}>Fixed Code</div>
-          <pre style={{ fontSize: '0.75rem', color: 'var(--text-0)', whiteSpace: 'pre-wrap', fontFamily: "'JetBrains Mono', monospace" }}>
+          <div className="ai-card-label d-flex align-items-center justify-content-between" style={{ color: 'var(--green)' }}>
+            <span>Fixed Code</span>
+            {onApplyFix && (
+              <button 
+                onClick={() => onApplyFix(response.fixedCode)}
+                style={{ background: 'var(--green)', color: '#fff', border: 'none', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}
+              >
+                Apply Solution
+              </button>
+            )}
+          </div>
+          <pre style={{ fontSize: '0.75rem', color: 'var(--text-0)', whiteSpace: 'pre-wrap', fontFamily: "'JetBrains Mono', monospace", marginTop: '8px' }}>
             {response.fixedCode}
           </pre>
         </div>

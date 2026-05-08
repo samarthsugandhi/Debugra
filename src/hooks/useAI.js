@@ -35,13 +35,9 @@ export function useAI({ language, code, stderr, setCode, setActiveOutputTab, edi
   const fix = useCallback(() =>
     withAI(async () => {
       const result = await aiFixCode(code, stderr, LANGUAGES[language].name);
-      if (result.fixedCode) {
-        setCode(result.fixedCode);
-        toast.success('Code fixed!');
-      }
       return result;
     }),
-    [withAI, code, stderr, language, setCode]
+    [withAI, code, stderr, language]
   );
 
   const explain = useCallback(() =>

@@ -16,12 +16,14 @@ A professional, real-time collaborative code editor for developers and CS studen
 - **VS Code-Like UI** — Professional dark-mode interface with status bar, tab bar, and keyboard shortcuts (`Ctrl+Enter` to run)
 - **Multi-Language Execution** — Run 18+ languages (Python, Java, C++, JavaScript, Go, Rust, SQLite and more) powered by the Wandbox API — permanently free
 - **Monaco Editor** — Syntax highlighting, autocomplete, bracket matching, snippets, and code formatting
-- **AI Time-Travel Debugger** — Step-by-step execution visualization, error explanations, one-click fixes, logic breakdown, and test case generation (Groq `llama-3.3-70b-versatile`)
+- **AI Time-Travel Debugger** — Step-by-step execution visualization, error explanations, logic breakdown, and test case generation
+- **AI Fix with "Apply Solution"** — Click "Fix" to generate an AI solution, review it in the AI panel, and apply it to the editor with a single click
 - **Real-Time Collaboration** — Create rooms, share a Room ID, and code together with live Firebase sync
+- **Persistent Rooms & Easy Exit** — Auto-rejoin rooms on page refresh, and easily leave a room with the "Exit Room" button
 - **Access Control & Presence** — Author-managed edit permissions with request/approve/deny/revoke flow, displaying real user names
 - **Live User Tracking** — Clickable status bar showing all connected members with a dropdown list
 - **Team Chat** — In-editor real-time messaging for collaborators
-- **Saved Code History** — Authenticated users can save code to Firestore and reload it anytime
+- **Saved Code History** — Authenticated users can save code with custom file names to Firestore and reload it anytime
 - **User Input (stdin)** — Auto-detects input functions and syncs stdin across all room members
 - **Clean & Aesthetic UI** — Minimalist design system using geometric symbols (`✦`, `⟡`) and language badges (`PY`, `JS`, `C++`) instead of generic emojis
 - **Mobile Responsive** — Bootstrap-powered responsive layout with a dedicated mobile bottom navigation bar

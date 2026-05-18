@@ -5,6 +5,28 @@ import {
 import { db } from '../services/firebase';
 import toast from 'react-hot-toast';
 
+const ROOM_AUTH_PREFIX = 'debugra_roomAuth_';
+
+async function hashRoomPassword(password, salt) {
+  const encoded = new TextEncoder().encode(`${salt}:${password}`);
+  const digest = await crypto.subtle.digest('SHA-256', encoded);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function createRoomSalt() {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function rememberRoomAccess(roomId) {
+  sessionStorage.setItem(`${ROOM_AUTH_PREFIX}${roomId}`, 'true');
+}
+
+function hasRememberedRoomAccess(roomId) {
+  return sessionStorage.getItem(`${ROOM_AUTH_PREFIX}${roomId}`) === 'true';
+}
+
 /**
  * useRoom
  * Manages all Firebase Firestore room state:
@@ -76,13 +98,22 @@ export function useRoom({ user, code, language, stdinValue, setCode, setLanguage
   }, [user, roomId]); // Join logic uses the function below
 
   // ─── Create room ────────────────────────────────────────────────────────────
-  const createRoom = useCallback(async () => {
+  const createRoom = useCallback(async (roomPassword = '') => {
     if (!user) return false; // let caller show auth modal
     const id = crypto.randomUUID().slice(0, 8);
     const displayName = user.displayName || user.email?.split('@')[0] || 'Guest';
+    const trimmedPassword = roomPassword.trim();
+    const passwordSalt = trimmedPassword ? createRoomSalt() : null;
+    const passwordHash = trimmedPassword
+      ? await hashRoomPassword(trimmedPassword, passwordSalt)
+      : null;
+
     await setDoc(doc(db, 'rooms', id), {
       name: `Room ${id}`,
       createdBy: user.uid,
+      isPrivate: Boolean(passwordHash),
+      passwordSalt,
+      passwordHash,
       code,
       language,
       activeUsers: [{ uid: user.uid, displayName }],
@@ -94,20 +125,40 @@ export function useRoom({ user, code, language, stdinValue, setCode, setLanguage
     });
     setRoomId(id);
     localStorage.setItem('debugra_roomId', id);
+    rememberRoomAccess(id);
     toast.success(`Room created! ID: ${id}`);
     navigator.clipboard.writeText(id);
     return true;
   }, [user, code, language]);
 
   // ─── Join room ──────────────────────────────────────────────────────────────
-  const joinRoom = useCallback(async (joinId) => {
+  const joinRoom = useCallback(async (joinId, roomPassword = '') => {
     if (!user || !joinId.trim()) return false;
     const newRoomId = joinId.trim();
     try {
       const roomRef = doc(db, 'rooms', newRoomId);
       const roomSnap = await getDoc(roomRef);
       if (!roomSnap.exists()) { toast.error('Room not found'); return false; }
-      const currentUsers = roomSnap.data().activeUsers || [];
+      const data = roomSnap.data();
+      const currentUsers = data.activeUsers || [];
+      const isCreator = data.createdBy === user.uid;
+      const isAllowed = data.allowedEditors?.includes(user.uid);
+      const needsPassword = data.passwordHash && !isCreator && !isAllowed && !hasRememberedRoomAccess(newRoomId);
+
+      if (needsPassword) {
+        const suppliedPassword = roomPassword.trim();
+        if (!suppliedPassword) {
+          toast.error('Room passcode required');
+          return false;
+        }
+
+        const suppliedHash = await hashRoomPassword(suppliedPassword, data.passwordSalt);
+        if (suppliedHash !== data.passwordHash) {
+          toast.error('Invalid room passcode');
+          return false;
+        }
+      }
+
       const displayName = user.displayName || user.email?.split('@')[0] || 'Guest';
       if (!currentUsers.some((u) => u.uid === user.uid)) {
         await updateDoc(roomRef, {
@@ -116,6 +167,7 @@ export function useRoom({ user, code, language, stdinValue, setCode, setLanguage
       }
       setRoomId(newRoomId);
       localStorage.setItem('debugra_roomId', newRoomId);
+      rememberRoomAccess(newRoomId);
       toast.success(`Joined room: ${newRoomId}`);
       return true;
     } catch {

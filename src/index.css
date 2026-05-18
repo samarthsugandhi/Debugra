@@ -90,6 +90,7 @@ body {
   font-family: 'Inter', sans-serif;
 }
 .topbar-input:focus { border-color: var(--accent); }
+.topbar-password-input { width: 130px; }
 
 /* User avatar circle */
 .user-avatar {

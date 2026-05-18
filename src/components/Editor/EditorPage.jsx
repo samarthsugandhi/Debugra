@@ -30,6 +30,8 @@ export default function EditorPage({ user }) {
   const [mobileTab, setMobileTab] = useState(MOBILE_TABS.CODE);
   const [showJoin, setShowJoin] = useState(false);
   const [joinId, setJoinId] = useState('');
+  const [joinPassword, setJoinPassword] = useState('');
+  const [roomPassword, setRoomPassword] = useState('');
   const [outputWidth, setOutputWidth] = useState(420);
   const resizingRef = useRef(false);
 
@@ -141,14 +143,20 @@ export default function EditorPage({ user }) {
             <div className="room-controls d-flex align-items-center gap-2">
               <button className="topbar-link" onClick={async () => {
                 if (!user) { setAuthMode('login'); setShowAuth(true); return; }
-                room.createRoom();
+                const created = await room.createRoom(roomPassword);
+                if (created) setRoomPassword('');
               }}>+ New Room</button>
+              <input value={roomPassword} onChange={(e) => setRoomPassword(e.target.value)}
+                placeholder="Optional password" className="topbar-input topbar-password-input" type="password" />
               {showJoin ? (
                 <>
                   <input value={joinId} onChange={(e) => setJoinId(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && room.joinRoom(joinId).then(ok => ok && (setShowJoin(false), setJoinId('')))}
+                    onKeyDown={(e) => e.key === 'Enter' && room.joinRoom(joinId, joinPassword).then(ok => ok && (setShowJoin(false), setJoinId(''), setJoinPassword('')))}
                     placeholder="Room ID" className="topbar-input" autoFocus />
-                  <button className="topbar-link" onClick={() => room.joinRoom(joinId).then(ok => ok && (setShowJoin(false), setJoinId('')))}>Join</button>
+                  <input value={joinPassword} onChange={(e) => setJoinPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && room.joinRoom(joinId, joinPassword).then(ok => ok && (setShowJoin(false), setJoinId(''), setJoinPassword('')))}
+                    placeholder="Passcode" className="topbar-input topbar-password-input" type="password" />
+                  <button className="topbar-link" onClick={() => room.joinRoom(joinId, joinPassword).then(ok => ok && (setShowJoin(false), setJoinId(''), setJoinPassword('')))}>Join</button>
                   <button className="topbar-link" onClick={() => setShowJoin(false)}>✕</button>
                 </>
               ) : (

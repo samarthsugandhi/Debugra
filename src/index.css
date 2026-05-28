@@ -2770,14 +2770,8 @@ body.focus-mode-active .monaco-editor-wrapper {
   background: #1e2327 !important;
 }
 
-/* Smooth transition when entering/leaving */
-.editor-header,
-.editor-toolbar,
-.editor-status-bar,
-.chat-panel,
-.history-panel {
-  transition: opacity 0.25s ease;
-}
+/* Note: focus-mode-active uses display: none which cannot animate.
+   Elements are hidden instantly without transition. */
 
 /* ── HUD (Heads-Up Display) ─────────────────────────────── */
 .focus-mode-hud {
@@ -2851,6 +2845,11 @@ body.focus-mode-active .monaco-editor-wrapper {
 
 .focus-timer-toggle:hover { opacity: 1; }
 
+.focus-timer-toggle:focus-visible {
+  outline: 2px solid #6f9ceb;
+  outline-offset: 2px;
+}
+
 /* ── Controls row ───────────────────────────────────────── */
 .focus-mode-controls {
   display: flex;
@@ -2876,6 +2875,11 @@ body.focus-mode-active .monaco-editor-wrapper {
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+.focus-control-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
 .focus-control-btn.exit {
   color: #f48771;
   border-color: rgba(244, 135, 113, 0.3);
@@ -2884,4 +2888,9 @@ body.focus-mode-active .monaco-editor-wrapper {
 .focus-control-btn.exit:hover {
   background: rgba(244, 135, 113, 0.12);
   border-color: #f48771;
+}
+
+.focus-control-btn.exit:focus-visible {
+  outline: 2px solid #f48771;
+  outline-offset: 2px;
 }

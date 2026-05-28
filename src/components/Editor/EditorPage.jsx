@@ -894,7 +894,7 @@ export default function EditorPage({ user }) {
           <button
             className="toolbar-btn"
             onClick={toggleFocusMode}
-            title="Focus Mode (Ctrl+Shift+F)"
+            title="Focus Mode (Ctrl/Cmd+Shift+F)"
             aria-label="Toggle focus mode"
             aria-pressed={isFocusMode}
           >

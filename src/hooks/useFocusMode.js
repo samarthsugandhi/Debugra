@@ -15,7 +15,8 @@ export function useFocusMode() {
   // ── Keyboard shortcut ──────────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+      // Use e.code instead of e.key for better locale/layout independence
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyF") {
         e.preventDefault();
         setIsFocusMode((prev) => !prev);
       }
@@ -38,20 +39,29 @@ export function useFocusMode() {
       setSecondsLeft(25 * 60);
       setIsBreak(false);
     }
+    // Cleanup: always remove class on unmount to prevent leaking global state
+    return () => {
+      document.body.classList.remove("focus-mode-active");
+    };
   }, [isFocusMode]);
 
   // ── Pomodoro countdown ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!timerRunning) return;
-    if (secondsLeft <= 0) {
-      // Flip between work and break
-      setIsBreak((prev) => !prev);
-      setSecondsLeft(isBreak ? 25 * 60 : 5 * 60);
-      return;
-    }
-    const id = setInterval(() => setSecondsLeft((s) => s - 1), 1000);
+    
+    // Only depend on timerRunning to reduce interval recreation
+    const id = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          setIsBreak((prev) => !prev);
+          // Alternate between 25 min work and 5 min break
+          return !isBreak ? 5 * 60 : 25 * 60;
+        }
+        return s - 1;
+      });
+    }, 1000);
     return () => clearInterval(id);
-  }, [timerRunning, secondsLeft, isBreak]);
+  }, [timerRunning]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const toggleFocusMode  = useCallback(() => setIsFocusMode((p) => !p), []);

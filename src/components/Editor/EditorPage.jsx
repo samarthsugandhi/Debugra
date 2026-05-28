@@ -39,6 +39,7 @@ import MobileBottomNav from './MobileBottomNav';
 import VideoCall from './VideoCall';
 import VotePopup from './VotePopup';
 import { getSessionApiKey, isSecureApiKeyStored } from '../../services/secureApiKeyStore';
+import DebugOverlay from './DebugOverlay';
 
 function getApiKeyStatus() {
   if (getSessionApiKey()) return 'unlocked';
@@ -74,6 +75,7 @@ export default function EditorPage({ user }) {
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [blurIntensity, setBlurIntensity] = useState(10); //Adds State for wallpaper blur
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const resizingRef = useRef(false);
 
   const isMobile = useIsMobile();
@@ -1033,18 +1035,46 @@ export default function EditorPage({ user }) {
               )}
             </div>
             {execution.stderr && (
-              <button
-                className={`output-tab ${execution.activeOutputTab === OUTPUT_TABS.STDERR ? 'active' : ''}`}
-                onClick={() => execution.setActiveOutputTab(OUTPUT_TABS.STDERR)}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
               >
-                <span
-                  style={{
-                    color: execution.activeOutputTab === OUTPUT_TABS.STDERR ? '#f44747' : undefined,
-                  }}
+                <button
+                  className={`output-tab ${execution.activeOutputTab === OUTPUT_TABS.STDERR ? 'active' : ''}`}
+                  onClick={() => execution.setActiveOutputTab(OUTPUT_TABS.STDERR)}
                 >
-                  ✦ Errors
-                </span>
-              </button>
+                  <span
+                    style={{
+                      color: execution.activeOutputTab === OUTPUT_TABS.STDERR ? '#f44747' : undefined,
+                    }}
+                  >
+                    ✦ Errors
+                  </span>
+                </button>
+                {/* ── Debug with AI inline button ── */}
+                <button
+                  id="debug-with-ai-btn"
+                  className="debug-ai-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    execution.setActiveOutputTab(OUTPUT_TABS.STDERR);
+                    ai.debugError();
+                    setShowDebugOverlay(true);
+                  }}
+                  title="Explain this error in plain English"
+                  aria-label="Debug with AI"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Debug with AI
+                </button>
+              </div>
             )}
             {(ai.aiResponse || ai.isAILoading) && (
               <button
@@ -1248,203 +1278,40 @@ export default function EditorPage({ user }) {
           onStatusChange={() => setApiKeyStatus(getApiKeyStatus())}
         />
       )}
-      {showAccount && user && <AccountSettings onClose={() => setShowAccount(false)} user={user} />}
+{showAccount && user && (
+  <AccountSettings
+    onClose={() => setShowAccount(false)}
+    user={user}
+  />
+)}
 
-      {showSettings && (
-        <div className="settings-modal-backdrop" onClick={() => setShowSettings(false)}>
-          <div
-            className="settings-modal"
-            role="dialog"
-            aria-label="Settings"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="audio-settings-head">
-              <span>Editor Settings</span>
-              <button
-                className="history-action-btn"
-                aria-label="Close Settings"
-                onClick={() => setShowSettings(false)}
-              >
-                <i className="bi bi-x" />
-              </button>
-            </div>
+      {/* Debug Overlay */}
+      <DebugOverlay
+        isOpen={showDebugOverlay}
+        isLoading={ai.isDebugLoading}
+        response={ai.debugResponse}
+        stderr={execution.stderr}
+        onClose={() => {
+          setShowDebugOverlay(false);
+          ai.clearDebug();
+        }}
+        onApplyFix={() => {
+          ai.fix();
+        }}
+      />
 
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-type" style={{ fontSize: '14px' }} />
-                <span>Editor font</span>
-              </div>
-              <select
-                className="lang-select"
-                value={editor.fontFamily}
-                onChange={(e) => editor.setFontFamily(e.target.value)}
-                aria-label="Editor font"
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                {EDITOR_FONTS.map((font) => (
-                  <option key={font.id} value={font.id}>
-                    {font.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-palette" style={{ fontSize: '14px' }} />
-                <span>Theme</span>
-              </div>
-              <select
-                className="lang-select"
-                value={editor.theme}
-                onChange={(e) => editor.setTheme(e.target.value)}
-                aria-label="Editor theme"
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                {EDITOR_THEMES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="audio-settings-row" style={{ marginTop: '12px' }}>
-              <div className="audio-settings-label">
-                <i className="bi bi-sliders" style={{ fontSize: '14px' }} />
-                <span>Wallpaper Blur</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="30"
-                  step="1"
-                  value={blurIntensity}
-                  onChange={(e) => setBlurIntensity(Number(e.target.value))}
-                  style={{ flex: 1, accentColor: '#00bcd4' }}
-                />
-                <span style={{ fontSize: '12px', minWidth: '30px', textAlign: 'right' }}>
-                  {blurIntensity}px
-                </span>
-              </div>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-braces" style={{ fontSize: '14px' }} />
-                <span>Tab size</span>
-              </div>
-              <select
-                className="lang-select"
-                aria-label="Tab size"
-                value={String(editor.tabSize)}
-                onChange={(e) => editor.setTabSize(Number(e.target.value))}
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                <option value="2">2 spaces</option>
-                <option value="4">4 spaces</option>
-              </select>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-layout-sidebar" style={{ fontSize: '14px' }} />
-                <span>Minimap</span>
-              </div>
-              <select
-                className="lang-select"
-                aria-label="Minimap"
-                value={editor.minimapEnabled ? 'enabled' : 'disabled'}
-                onChange={(e) => editor.setMinimapEnabled(e.target.value === 'enabled')}
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                <option value="enabled">Enabled</option>
-                <option value="disabled">Disabled</option>
-              </select>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-rulers" style={{ fontSize: '14px' }} />
-                <span>Vertical ruler</span>
-              </div>
-              <select
-                className="lang-select"
-                aria-label="Vertical ruler"
-                value={String(editor.rulerColumn)}
-                onChange={(e) => editor.setRulerColumn(Number(e.target.value))}
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                <option value="80">80 chars</option>
-                <option value="120">120 chars</option>
-              </select>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                <i className="bi bi-clock" style={{ fontSize: '14px' }} />
-                <span>Autosave interval</span>
-              </div>
-              <select
-                className="lang-select"
-                aria-label="Autosave interval"
-                value={String(editor.autosaveInterval)}
-                onChange={(e) => editor.setAutosaveInterval(Number(e.target.value))}
-                style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-              >
-                <option value="0">Off</option>
-                <option value="5000">5s</option>
-                <option value="10000">10s</option>
-              </select>
-            </div>
-
-            <div className="audio-settings-row">
-              <div className="audio-settings-label">
-                {audioFeedback.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                <span>Audio feedback</span>
-              </div>
-              <button
-                className={`audio-toggle ${audioFeedback.muted ? '' : 'active'}`}
-                aria-pressed={!audioFeedback.muted}
-                onClick={() => audioFeedback.setMuted(!audioFeedback.muted)}
-              >
-                {audioFeedback.muted ? 'Muted' : 'On'}
-              </button>
-            </div>
-
-            <label className="audio-settings-slider">
-              <span>Volume</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={audioFeedback.volume}
-                onChange={(e) => audioFeedback.setVolume(e.target.value)}
-              />
-              <span>{Math.round(audioFeedback.volume * 100)}%</span>
-            </label>
-
-            <button
-              className="audio-test-btn"
-              onClick={audioFeedback.testSound}
-              disabled={audioFeedback.muted}
-            >
-              Test chime
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Video Call Overlay */}
-      {showVideoCall && room.roomId && (
-        <VideoCall
-          roomId={room.roomId}
-          userName={user?.displayName || user?.email?.split('@')[0] || 'Guest'}
-          onClose={() => setShowVideoCall(false)}
-        />
-      )}
+{/* Video Call Overlay */}
+{showVideoCall && room.roomId && (
+  <VideoCall
+    roomId={room.roomId}
+    userName={
+      user?.displayName ||
+      user?.email?.split('@')[0] ||
+      'Guest'
+    }
+    onClose={() => setShowVideoCall(false)}
+  />
+)}
 
       {/* Real-time Democratic Vote Popup */}
       <VotePopup room={room} user={user} />

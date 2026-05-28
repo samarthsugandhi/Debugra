@@ -9,7 +9,8 @@ import templatesData from "../../data/templates.json";
 export default function TemplateLibrary({ isOpen, onClose, onInsert, currentLanguage }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [copiedId, setCopiedId] = useState(null);
+  const [copiedId, setCopiedId]     = useState(null);
+  const [savedVersion, setSavedVersion] = useState(0);
 
   const categories = templatesData.categories;
 
@@ -25,7 +26,7 @@ export default function TemplateLibrary({ isOpen, onClose, onInsert, currentLang
       all = all.filter(
         (t) =>
           t.name.toLowerCase().includes(query) ||
-          t.tags.some((tag) => tag.includes(query))
+          t.tags.some((tag) => tag.toLowerCase().includes(query))
       );
     }
     return all;
@@ -37,7 +38,7 @@ export default function TemplateLibrary({ isOpen, onClose, onInsert, currentLang
     } catch {
       return [];
     }
-  }, [copiedId]);
+  }, [savedVersion]);
 
   const handleInsert = (code) => {
     onInsert(code);
@@ -48,6 +49,8 @@ export default function TemplateLibrary({ isOpen, onClose, onInsert, currentLang
     navigator.clipboard.writeText(code).then(() => {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
+    }).catch(() => {
+      console.warn("Clipboard write failed");
     });
   };
 
@@ -55,18 +58,19 @@ export default function TemplateLibrary({ isOpen, onClose, onInsert, currentLang
     const saved = JSON.parse(localStorage.getItem("debugra_custom_templates") || "[]");
     saved.splice(index, 1);
     localStorage.setItem("debugra_custom_templates", JSON.stringify(saved));
-    setCopiedId(Date.now());
+    setSavedVersion((v) => v + 1);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="tl-overlay" role="dialog" aria-modal="true" aria-label="Template Library">
+    <div className="tl-overlay" role="dialog" aria-modal="true" aria-label="Template Library" aria-labelledby="tl-title-id">
       <div className="tl-backdrop" onClick={onClose} />
       <div className="tl-panel">
         <div className="tl-header">
           <span className="tl-title">
-            <span className="tl-title-icon">✦</span> Template Library
+            <span className="tl-title-icon">✦</span>
+            <span id="tl-title-id">Template Library</span>
           </span>
           <button className="tl-close-btn" onClick={onClose} aria-label="Close template library">✕</button>
         </div>

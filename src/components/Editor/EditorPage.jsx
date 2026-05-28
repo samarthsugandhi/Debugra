@@ -47,6 +47,9 @@ function getApiKeyStatus() {
 }
 
 export default function EditorPage({ user }) {
+  const isTestRoom =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('testRoom') === '1';
   const navigate = useNavigate();
   const editorRef = useRef(null);
 
@@ -68,6 +71,7 @@ export default function EditorPage({ user }) {
   const [minimapSide, setMinimapSide] = useState('right');
   const [showSettings, setShowSettings] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [blurIntensity, setBlurIntensity] = useState(10); //Adds State for wallpaper blur
   const resizingRef = useRef(false);
 
@@ -298,7 +302,7 @@ export default function EditorPage({ user }) {
           </button>
           <div className="topbar-sep mx-2 d-none d-md-block" />
           <span className="topbar-title d-none d-md-block">Code Editor</span>
-          {room.roomId && (
+          {(room.roomId || isTestRoom) && (
             <>
               <div className="topbar-sep mx-2 d-none d-sm-block" />
               <span className="topbar-title text-success d-none d-sm-inline">
@@ -334,12 +338,29 @@ export default function EditorPage({ user }) {
               >
                 📹 {showVideoCall ? 'Leave Call' : 'Join Call'}
               </button>
+              <button
+                className="topbar-link ms-2"
+                onClick={() => setShowVoiceCall((s) => !s)}
+                style={{
+                  background: showVoiceCall ? 'rgba(34,197,94,0.12)' : 'rgba(99,102,241,0.06)',
+                  color: showVoiceCall ? '#16a34a' : '#4f46e5',
+                  border: showVoiceCall
+                    ? '1px solid rgba(16,185,129,0.2)'
+                    : '1px solid rgba(99,102,241,0.12)',
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  transition: 'all 0.18s',
+                }}
+              >
+                🔊 {showVoiceCall ? 'Leave Voice' : 'Join Voice'}
+              </button>
             </>
           )}
         </div>
 
         <div className="topbar-right d-flex align-items-center gap-2">
-          {!room.roomId && (
+          {!(room.roomId || isTestRoom) && (
             <div className="room-controls d-flex align-items-center gap-2">
               <button
                 className="topbar-link"
